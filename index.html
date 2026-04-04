@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>低位株トレード記録</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2234;
+    --border: #2a3a52;
+    --accent: #00d4ff;
+    --accent2: #00ff9f;
+    --warn: #ff6b6b;
+    --gold: #ffd700;
+    --text: #e8f0fe;
+    --muted: #7a8ba0;
+    --score-high: #00ff9f;
+    --score-mid: #ffd700;
+    --score-low: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+/* ヘッダー */
+.header {
+background: linear-gradient(135deg, #0f1c35 0%, #0a0e1a 100%);
+border-bottom: 1px solid var(–border);
+padding: 16px 20px 12px;
+position: sticky;
+top: 0;
+z-index: 100;
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+.app-title { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+.app-title span { color: var(–accent); }
+.date-badge {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 20px;
+padding: 4px 12px;
+font-size: 12px;
+color: var(–muted);
+font-family: ‘JetBrains Mono’, monospace;
+}
+
+/* タブ */
+.tabs {
+display: flex;
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+overflow-x: auto;
+scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+flex: 1;
+min-width: 80px;
+padding: 12px 8px;
+text-align: center;
+font-size: 12px;
+font-weight: 700;
+color: var(–muted);
+border: none;
+background: none;
+cursor: pointer;
+border-bottom: 2px solid transparent;
+transition: all 0.2s;
+white-space: nowrap;
+}
+.tab.active {
+color: var(–accent);
+border-bottom-color: var(–accent);
+}
+
+/* コンテンツ */
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+/* カード */
+.card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 16px;
+padding: 16px;
+margin-bottom: 12px;
+}
+.card-title {
+font-size: 11px;
+font-weight: 700;
+color: var(–accent);
+letter-spacing: 1px;
+text-transform: uppercase;
+margin-bottom: 12px;
+}
+
+/* フォーム */
+.form-group { margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+label {
+display: block;
+font-size: 11px;
+color: var(–muted);
+font-weight: 700;
+margin-bottom: 5px;
+letter-spacing: 0.5px;
+}
+input, select {
+width: 100%;
+background: var(–surface2);
+border: 1.5px solid var(–border);
+border-radius: 10px;
+padding: 12px 14px;
+color: var(–text);
+font-size: 16px;
+font-family: ‘JetBrains Mono’, monospace;
+transition: border-color 0.2s;
+-webkit-appearance: none;
+}
+input:focus, select:focus {
+outline: none;
+border-color: var(–accent);
+background: #162035;
+}
+input[type=“text”], input[type=“date”] { font-family: ‘Noto Sans JP’, sans-serif; }
+select { cursor: pointer; }
+
+/* シグナルスコア表示 */
+.score-display {
+background: var(–surface2);
+border-radius: 16px;
+padding: 20px;
+text-align: center;
+border: 2px solid var(–border);
+margin-bottom: 14px;
+position: relative;
+overflow: hidden;
+}
+.score-display::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+background: radial-gradient(circle at center, rgba(0,212,255,0.05) 0%, transparent 70%);
+}
+.score-label { font-size: 11px; color: var(–muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+.score-number {
+font-size: 64px;
+font-weight: 900;
+font-family: ‘JetBrains Mono’, monospace;
+line-height: 1;
+transition: all 0.3s;
+}
+.score-number.s0, .score-number.s1 { color: var(–score-low); text-shadow: 0 0 20px rgba(255,107,107,0.4); }
+.score-number.s2 { color: var(–score-mid); text-shadow: 0 0 20px rgba(255,215,0,0.4); }
+.score-number.s3, .score-number.s4 { color: var(–score-high); text-shadow: 0 0 20px rgba(0,255,159,0.4); }
+.score-verdict {
+font-size: 13px;
+font-weight: 700;
+margin-top: 6px;
+}
+
+/* 指値ボックス */
+.price-boxes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.price-box {
+border-radius: 12px;
+padding: 12px 8px;
+text-align: center;
+border: 1.5px solid;
+}
+.price-box.entry { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.3); }
+.price-box.profit { background: rgba(0,255,159,0.08); border-color: rgba(0,255,159,0.3); }
+.price-box.loss { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.3); }
+.price-box-label { font-size: 9px; color: var(–muted); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
+.price-box-value {
+font-size: 20px;
+font-weight: 900;
+font-family: ‘JetBrains Mono’, monospace;
+}
+.price-box.entry .price-box-value { color: var(–accent); }
+.price-box.profit .price-box-value { color: var(–accent2); }
+.price-box.loss .price-box-value { color: var(–warn); }
+.price-box-pct { font-size: 10px; color: var(–muted); margin-top: 2px; }
+
+/* フラグ表示 */
+.flags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.flag {
+padding: 6px 12px;
+border-radius: 20px;
+font-size: 11px;
+font-weight: 700;
+border: 1.5px solid;
+}
+.flag.on { background: rgba(0,255,159,0.1); border-color: rgba(0,255,159,0.4); color: var(–accent2); }
+.flag.off { background: rgba(122,139,160,0.1); border-color: rgba(122,139,160,0.2); color: var(–muted); }
+
+/* ボタン */
+.btn-primary {
+width: 100%;
+background: linear-gradient(135deg, var(–accent) 0%, #0099cc 100%);
+color: #000;
+border: none;
+border-radius: 14px;
+padding: 16px;
+font-size: 16px;
+font-weight: 900;
+cursor: pointer;
+letter-spacing: 0.5px;
+transition: opacity 0.2s, transform 0.1s;
+}
+.btn-primary:active { opacity: 0.8; transform: scale(0.98); }
+.btn-secondary {
+width: 100%;
+background: transparent;
+color: var(–accent);
+border: 1.5px solid var(–accent);
+border-radius: 14px;
+padding: 13px;
+font-size: 14px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.2s;
+margin-top: 8px;
+}
+.btn-danger {
+background: transparent;
+color: var(–warn);
+border: 1.5px solid var(–warn);
+border-radius: 10px;
+padding: 8px 14px;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+}
+
+/* 記録リスト */
+.record-item {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 14px;
+padding: 14px;
+margin-bottom: 10px;
+position: relative;
+}
+.record-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.record-code { font-size: 20px; font-weight: 900; font-family: ‘JetBrains Mono’, monospace; }
+.record-name { font-size: 11px; color: var(–muted); margin-top: 1px; }
+.record-score-badge {
+width: 36px; height: 36px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-size: 18px; font-weight: 900; font-family: ‘JetBrains Mono’, monospace;
+flex-shrink: 0;
+}
+.record-score-badge.s0, .record-score-badge.s1 { background: rgba(255,107,107,0.15); color: var(–score-low); border: 1.5px solid rgba(255,107,107,0.3); }
+.record-score-badge.s2 { background: rgba(255,215,0,0.15); color: var(–score-mid); border: 1.5px solid rgba(255,215,0,0.3); }
+.record-score-badge.s3, .record-score-badge.s4 { background: rgba(0,255,159,0.15); color: var(–score-high); border: 1.5px solid rgba(0,255,159,0.3); }
+.record-prices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.record-price-item { text-align: center; }
+.record-price-lbl { font-size: 9px; color: var(–muted); font-weight: 700; }
+.record-price-val { font-size: 14px; font-weight: 700; font-family: ‘JetBrains Mono’, monospace; }
+.record-date { font-size: 10px; color: var(–muted); margin-top: 8px; }
+
+/* 結果入力 */
+.result-badge {
+display: inline-block;
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 11px;
+font-weight: 700;
+}
+.result-badge.win { background: rgba(0,255,159,0.15); color: var(–accent2); border: 1px solid rgba(0,255,159,0.3); }
+.result-badge.lose { background: rgba(255,107,107,0.15); color: var(–warn); border: 1px solid rgba(255,107,107,0.3); }
+.result-badge.pending { background: rgba(122,139,160,0.15); color: var(–muted); border: 1px solid rgba(122,139,160,0.3); }
+
+/* 分析ページ */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-box {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 14px;
+text-align: center;
+}
+.stat-box-label { font-size: 10px; color: var(–muted); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px; }
+.stat-box-value { font-size: 28px; font-weight: 900; font-family: ‘JetBrains Mono’, monospace; color: var(–accent); }
+.stat-box-sub { font-size: 11px; color: var(–muted); margin-top: 2px; }
+
+.score-analysis-row {
+display: flex;
+align-items: center;
+padding: 12px 0;
+border-bottom: 1px solid var(–border);
+}
+.score-analysis-row:last-child { border-bottom: none; }
+.score-pill {
+width: 32px; height: 32px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-weight: 900; font-family: ‘JetBrains Mono’, monospace; font-size: 15px;
+margin-right: 12px; flex-shrink: 0;
+}
+.score-pill.s0, .score-pill.s1 { background: rgba(255,107,107,0.15); color: var(–score-low); }
+.score-pill.s2 { background: rgba(255,215,0,0.15); color: var(–score-mid); }
+.score-pill.s3, .score-pill.s4 { background: rgba(0,255,159,0.15); color: var(–score-high); }
+.score-bar-wrap { flex: 1; }
+.score-bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+.score-bar-bg { height: 6px; background: var(–border); border-radius: 3px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.score-bar-fill.high { background: linear-gradient(90deg, var(–accent2), #00ccff); }
+.score-bar-fill.mid { background: var(–gold); }
+.score-bar-fill.low { background: var(–warn); }
+.score-count { font-size: 11px; color: var(–muted); margin-left: 10px; white-space: nowrap; }
+
+/* CSV出力 */
+.export-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+width: 100%;
+background: var(–surface2);
+border: 1.5px solid var(–border);
+border-radius: 14px;
+padding: 14px;
+color: var(–text);
+font-size: 14px;
+font-weight: 700;
+cursor: pointer;
+margin-bottom: 10px;
+transition: border-color 0.2s;
+}
+.export-btn:active { border-color: var(–accent); }
+
+/* トースト */
+.toast {
+position: fixed;
+bottom: 90px;
+left: 50%;
+transform: translateX(-50%) translateY(20px);
+background: var(–accent2);
+color: #000;
+padding: 10px 20px;
+border-radius: 20px;
+font-size: 13px;
+font-weight: 700;
+opacity: 0;
+transition: all 0.3s;
+z-index: 999;
+white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ボトムナビ */
+.bottom-nav {
+position: fixed;
+bottom: 0; left: 0; right: 0;
+background: var(–surface);
+border-top: 1px solid var(–border);
+display: flex;
+z-index: 100;
+}
+.nav-item {
+flex: 1;
+padding: 10px 4px 6px;
+text-align: center;
+border: none;
+background: none;
+cursor: pointer;
+color: var(–muted);
+font-size: 10px;
+font-weight: 700;
+transition: color 0.2s;
+}
+.nav-item.active { color: var(–accent); }
+.nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+.empty-state {
+text-align: center;
+padding: 40px 20px;
+color: var(–muted);
+}
+.empty-state .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+
+.divider { height: 1px; background: var(–border); margin: 16px 0; }
+
+.inline-result-row {
+display: flex; gap: 8px; margin-top: 8px;
+}
+.inline-result-row input {
+font-size: 14px;
+padding: 10px 12px;
+}
+
+/* 自動最適化バナー */
+.optimize-banner {
+background: linear-gradient(135deg, rgba(0,255,159,0.1) 0%, rgba(0,212,255,0.1) 100%);
+border: 1.5px solid rgba(0,255,159,0.3);
+border-radius: 14px;
+padding: 14px 16px;
+margin-bottom: 14px;
+position: relative;
+}
+.optimize-banner.locked {
+background: rgba(42,58,82,0.4);
+border-color: var(–border);
+}
+.optimize-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.optimize-title { font-size: 11px; font-weight: 700; color: var(–accent2); letter-spacing: 1px; }
+.optimize-title.locked { color: var(–muted); }
+.optimize-progress {
+font-size: 10px; color: var(–muted);
+display: flex; align-items: center; gap: 6px;
+}
+.progress-bar-bg { flex: 1; height: 4px; background: var(–border); border-radius: 2px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(–accent2), var(–accent)); border-radius: 2px; transition: width 0.5s ease; }
+.optimize-rates { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-top: 10px; }
+.opt-rate-box { text-align: center; background: var(–surface2); border-radius: 8px; padding: 6px 4px; }
+.opt-rate-score { font-size: 9px; color: var(–muted); font-weight: 700; }
+.opt-rate-val { font-size: 13px; font-weight: 900; font-family: ‘JetBrains Mono’, monospace; color: var(–accent2); }
+.opt-rate-val.default { color: var(–muted); }
+.opt-mode-badge {
+display: inline-block; padding: 3px 8px; border-radius: 10px;
+font-size: 10px; font-weight: 700;
+background: rgba(0,255,159,0.15); color: var(–accent2); border: 1px solid rgba(0,255,159,0.3);
+}
+.opt-mode-badge.default-mode {
+background: rgba(122,139,160,0.1); color: var(–muted); border-color: var(–border);
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="app-title">低位株<span>TRADE</span></div>
+    <div class="date-badge" id="todayDate"></div>
+  </div>
+</div>
+
+<!-- ページ：入力 -->
+
+<div class="page active" id="page-input">
+
+  <!-- Claude貼り付け入力 -->
+
+  <div class="card" style="border-color:rgba(0,212,255,0.4);background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(0,255,159,0.05))">
+    <div class="card-title" style="color:var(--accent2)">🤖 Claudeの読み取り結果を貼り付け</div>
+    <div class="form-group">
+      <textarea id="pasteInput" placeholder="Claudeが出したテキストをここに貼り付け → 全項目に自動入力されます"
+        style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;min-height:80px;resize:none;line-height:1.6;"
+        oninput="autoPaste(this.value)"></textarea>
+    </div>
+    <button class="btn-primary" onclick="autoPaste(document.getElementById('pasteInput').value)">
+      ⚡ 自動入力する
+    </button>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:var(--muted);margin:-4px 0 10px;">── または手動で入力 ──</div>
+
+  <div class="card">
+    <div class="card-title">📋 銘柄情報</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>銘柄コード</label>
+        <input type="number" id="code" placeholder="1234" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>日付</label>
+        <input type="date" id="tradeDate">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>銘柄名</label>
+      <input type="text" id="name" placeholder="○○工業">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 前日の4値 (円)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>始値</label>
+        <input type="number" id="open" placeholder="180" inputmode="decimal" oninput="calc()">
+      </div>
+      <div class="form-group">
+        <label>高値</label>
+        <input type="number" id="high" placeholder="195" inputmode="decimal" oninput="calc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>安値</label>
+        <input type="number" id="low" placeholder="175" inputmode="decimal" oninput="calc()">
+      </div>
+      <div class="form-group">
+        <label>終値</label>
+        <input type="number" id="close" placeholder="192" inputmode="decimal" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📈 東証 売買代金・出来高</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>売買代金 (千円)</label>
+        <input type="number" id="volume" placeholder="1343329" inputmode="decimal" oninput="calc()">
+      </div>
+      <div class="form-group">
+        <label>出来高倍率 (前日比)</label>
+        <input type="number" id="volumeRatio" placeholder="3.5" inputmode="decimal" step="0.1" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌙 夜間 (JNX/PTS) 4値・売買代金</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>夜間 始値</label>
+        <input type="number" id="nOpen" placeholder="82" inputmode="decimal" oninput="calc()">
+      </div>
+      <div class="form-group">
+        <label>夜間 高値</label>
+        <input type="number" id="nHigh" placeholder="84.5" inputmode="decimal" oninput="calc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>夜間 安値</label>
+        <input type="number" id="nLow" placeholder="79.1" inputmode="decimal" oninput="calc()">
+      </div>
+      <div class="form-group">
+        <label>夜間 終値</label>
+        <input type="number" id="nClose" placeholder="84.5" inputmode="decimal" oninput="calc()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>夜間 売買代金 (千円)</label>
+      <input type="number" id="nVolume" placeholder="31217" inputmode="decimal" oninput="calc()">
+    </div>
+  </div>
+
+  <!-- 自動最適化バナー -->
+
+  <div id="optimizeBanner"></div>
+
+  <!-- シグナル自動判定 -->
+
+  <div class="score-display">
+    <div class="score-label">SIGNAL SCORE</div>
+    <div class="score-number s0" id="scoreNum">—</div>
+    <div class="score-verdict" id="scoreVerdict" style="color:var(--muted)">終値を入力してください</div>
+  </div>
+
+  <div class="flags" id="flagsDisplay">
+    <div class="flag off">📈 ギャップアップ</div>
+    <div class="flag off">🕯 陽線</div>
+    <div class="flag off">💥 出来高急増</div>
+    <div class="flag off">🌙 夜間↑</div>
+  </div>
+
+  <!-- 指値計算 -->
+
+  <div class="price-boxes" id="priceBoxes">
+    <div class="price-box entry">
+      <div class="price-box-label">エントリー</div>
+      <div class="price-box-value" id="entryPrice">—</div>
+      <div class="price-box-pct">終値×1.035</div>
+    </div>
+    <div class="price-box profit">
+      <div class="price-box-label">利確 +4%</div>
+      <div class="price-box-value" id="profitPrice">—</div>
+      <div class="price-box-pct" id="profitPct"></div>
+    </div>
+    <div class="price-box loss">
+      <div class="price-box-label">損切 -5%</div>
+      <div class="price-box-value" id="lossPrice">—</div>
+      <div class="price-box-pct" id="lossPct"></div>
+    </div>
+  </div>
+
+<button class="btn-primary" onclick="saveRecord()">💾 記録する</button>
+<button class="btn-secondary" onclick="clearForm()">クリア</button>
+
+</div>
+
+<!-- ページ：記録一覧 -->
+
+<div class="page" id="page-list">
+  <div id="recordList"></div>
+</div>
+
+<!-- ページ：結果入力 -->
+
+<div class="page" id="page-result">
+  <div class="card" style="border-color:rgba(0,255,159,0.4);background:linear-gradient(135deg,rgba(0,255,159,0.05),rgba(0,212,255,0.05))">
+    <div class="card-title" style="color:var(--accent2)">🤖 Claudeの結果読み取りを貼り付け</div>
+    <textarea id="resultPasteInput" placeholder="例：&#10;銘柄コード：4594&#10;寄り付き：84&#10;高値：96&#10;&#10;複数銘柄まとめて貼り付けもOK！"
+      style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;min-height:100px;resize:none;line-height:1.8;"></textarea>
+    <button class="btn-primary" style="margin-top:10px;" onclick="autoResultPaste(document.getElementById('resultPasteInput').value)">
+      ⚡ 結果を自動入力する
+    </button>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--muted);margin:-4px 0 10px;">── または個別に入力 ──</div>
+  <div id="resultList"></div>
+</div>
+
+<!-- ページ：分析 -->
+
+<div class="page" id="page-stats">
+  <div class="stat-grid" id="overallStats"></div>
+  <div class="card">
+    <div class="card-title">🏆 スコア別 勝率</div>
+    <div id="scoreAnalysis"></div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div class="card-title">💾 データエクスポート</div>
+    <button class="export-btn" onclick="exportCSV()">
+      📊 CSVダウンロード（Excel用）
+    </button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;">Excelに貼り付けて管理シートに転記できます</p>
+    <div style="height:1px;background:var(--border);margin-bottom:12px;"></div>
+    <div class="card-title" style="color:var(--warn)">🔒 データバックアップ・復元</div>
+    <button class="export-btn" onclick="backupData()" style="border-color:rgba(0,212,255,0.4);">
+      📋 バックアップテキストをコピー
+    </button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;">このテキストをメモ帳やLINEに保存しておく</p>
+    <textarea id="restoreInput" placeholder="バックアップテキストをここに貼り付けて復元"
+      style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:12px;min-height:60px;resize:none;font-family:'Noto Sans JP',sans-serif;"></textarea>
+    <button class="btn-primary" style="margin-top:8px;background:linear-gradient(135deg,var(--warn),#cc4400);" onclick="restoreData()">
+      🔄 データを復元する
+    </button>
+  </div>
+</div>
+
+<!-- ボトムナビ -->
+
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="showPage('input',this)">
+    <span class="nav-icon">✏️</span>入力
+  </button>
+  <button class="nav-item" onclick="showPage('list',this)">
+    <span class="nav-icon">📋</span>記録
+  </button>
+  <button class="nav-item" onclick="showPage('result',this)">
+    <span class="nav-icon">🎯</span>結果
+  </button>
+  <button class="nav-item" onclick="showPage('stats',this)">
+    <span class="nav-icon">📊</span>分析
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// 複数キーで保存（どれか1つでも残ればOK）
+const KEYS = [
+  'teigakabu_records',
+  'teigakabu_v2',
+  'tgk_data'
+];
+const MIN_DATA = 30;
+
+function getRecords() {
+  for (const key of KEYS) {
+    try {
+      const data = localStorage.getItem(key);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+  }
+  // sessionStorageも試みる
+  try {
+    const data = sessionStorage.getItem(KEYS[0]);
+    if (data) return JSON.parse(data);
+  } catch(e) {}
+  return [];
+}
+
+function saveRecords(r) {
+  const json = JSON.stringify(r);
+  // 全キーに保存（保険）
+  KEYS.forEach(key => {
+    try { localStorage.setItem(key, json); } catch(e) {}
+  });
+  try { sessionStorage.setItem(KEYS[0], json); } catch(e) {}
+}
+
+function init() {
+  const today = new Date();
+  document.getElementById('todayDate').textContent =
+    `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+  document.getElementById('tradeDate').value = today.toISOString().split('T')[0];
+  
+  const records = getRecords();
+  if (records.length > 0) {
+    showToast(`✅ ${records.length}件のデータを読み込みました`);
+  }
+  
+  renderOptimizeBanner();
+  renderList();
+  renderStats();
+}
+
+const today = new Date();
+
+// ===== 自動最適化エンジン =====
+
+function calcOptimalProfitRates() {
+  const records = getRecords();
+  const done = records.filter(r => (r.result === '勝' || r.result === '負') && r.actualHigh && r.actualOpen);
+  const rates = {};
+  for (let s = 0; s <= 4; s++) {
+    const wins = done.filter(r => r.score === s && r.result === '勝');
+    if (wins.length >= 5) {
+      const avg = wins.reduce((sum, r) => sum + (r.actualHigh - r.entry) / r.entry, 0) / wins.length;
+      rates[s] = Math.min(Math.max(avg * 0.85, 0.03), 0.15);
+    }
+  }
+  return rates;
+}
+
+function calcOptimalEntryRates() {
+  const records = getRecords();
+  const done = records.filter(r => r.actualOpen && r.close && r.close > 0);
+  const rates = {};
+  for (let s = 0; s <= 4; s++) {
+    const group = done.filter(r => r.score === s);
+    if (group.length >= 5) {
+      const avgGap = group.reduce((sum, r) => sum + (r.actualOpen - r.close) / r.close, 0) / group.length;
+      rates[s] = Math.min(Math.max(avgGap + 0.005, 0.005), 0.05);
+    }
+  }
+  return rates;
+}
+
+function getProfitRate(score) {
+  const done = getRecords().filter(r => r.result === '勝' || r.result === '負');
+  if (done.length < MIN_DATA) return 0.04;
+  const rates = calcOptimalProfitRates();
+  return rates[score] !== undefined ? rates[score] : 0.04;
+}
+
+function getEntryRate(score, nightRiseRate) {
+  const done = getRecords().filter(r => r.result === '勝' || r.result === '負');
+  let nightBonus = 0;
+  if (nightRiseRate !== undefined && nightRiseRate > 0) {
+    if (nightRiseRate >= 0.10) nightBonus = 0.02;
+    else if (nightRiseRate >= 0.05) nightBonus = 0.01;
+    else if (nightRiseRate >= 0.03) nightBonus = 0.005;
+  }
+  if (done.length < MIN_DATA) return Math.min(0.035 + nightBonus, 0.08);
+  const rates = calcOptimalEntryRates();
+  const base = rates[score] !== undefined ? rates[score] : 0.035;
+  return Math.min(base + nightBonus, 0.10);
+}
+
+function isOptimized() {
+  return getRecords().filter(r => r.result === '勝' || r.result === '負').length >= MIN_DATA;
+}
+
+// バナー描画
+function renderOptimizeBanner() {
+  const records = getRecords();
+  const done = records.filter(r => r.result === '勝' || r.result === '負');
+  const count = done.length;
+  const pct = Math.min(count / MIN_DATA * 100, 100);
+  const optimized = count >= MIN_DATA;
+  const rates = optimized ? calcOptimalProfitRates() : {};
+
+  const el = document.getElementById('optimizeBanner');
+  if (optimized) {
+    const entryRates = calcOptimalEntryRates();
+    el.innerHTML = `
+      <div class="optimize-banner">
+        <div class="optimize-top">
+          <div class="optimize-title">🤖 AI自動最適化 稼働中</div>
+          <div class="opt-mode-badge">スコア別最適指値</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
+          ${count}件のデータから エントリー・利確ライン を自動計算中
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:0.5px;">📌 エントリー（終値から何%上）</div>
+        <div class="optimize-rates" style="margin-bottom:10px;">
+          ${[0,1,2,3,4].map(s => `
+            <div class="opt-rate-box">
+              <div class="opt-rate-score">${s}点</div>
+              <div class="opt-rate-val ${entryRates[s]?'':'default'}" style="font-size:11px;">${entryRates[s] ? '+'+Math.round(entryRates[s]*100*10)/10+'%' : '+3.5%'}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:0.5px;">✅ 利確（エントリーから何%上）</div>
+        <div class="optimize-rates">
+          ${[0,1,2,3,4].map(s => `
+            <div class="opt-rate-box">
+              <div class="opt-rate-score">${s}点</div>
+              <div class="opt-rate-val ${rates[s]?'':'default'}">${rates[s] ? '+'+Math.round(rates[s]*100)+'%' : '+4%'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="optimize-banner locked">
+        <div class="optimize-top">
+          <div class="optimize-title locked">🔒 自動最適化 準備中...</div>
+          <div class="opt-mode-badge default-mode">固定 +4%</div>
+        </div>
+        <div class="optimize-progress">
+          <span style="white-space:nowrap;font-size:11px;">${count}/${MIN_DATA}件</span>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <span style="white-space:nowrap;font-size:11px;color:var(--accent)">${MIN_DATA-count}件で解放</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">
+          結果を${MIN_DATA}件入力すると、スコア別に利確ラインが自動最適化されます
+        </div>
+      </div>`;
+  }
+}
+
+// 結果タブ貼り付け自動入力
+function autoResultPaste(text) {
+  if (!text || text.length < 3) { showToast('❌ テキストを入力してください'); return; }
+  
+  const records = getRecords();
+  let updated = 0;
+
+  const blocks = text.split(/(?=銘柄コード[：:　 ]*\d)/);
+  
+  blocks.forEach(block => {
+    if (!block.trim()) return;
+    
+    const getNum = (keys) => {
+      for (const key of keys) {
+        const re = new RegExp(key + '[：:　 ]*([\\d\\.]+)', 'i');
+        const m = block.match(re);
+        if (m) return parseFloat(m[1]);
+      }
+      return null;
+    };
+
+    const code = getNum(['銘柄コード', 'コード']);
+    const actualOpen = getNum(['寄り付き', '実際の寄り付き', '寄り']);
+    const actualHigh = getNum(['高値', '当日高値']);
+    const actualLow = getNum(['安値', '当日安値']);
+
+    if (!code || (!actualOpen && !actualHigh && !actualLow)) return;
+
+    const target = records.find(r => 
+      parseInt(r.code) === parseInt(code) && 
+      (!r.actualOpen || !r.actualHigh)
+    );
+
+    if (target) {
+      if (actualOpen) target.actualOpen = actualOpen;
+      if (actualHigh) target.actualHigh = actualHigh;
+      if (actualLow) target.actualLow = actualLow;
+      
+      const checkLow = target.actualLow || target.actualOpen;
+      if (target.actualHigh >= target.profit) {
+        target.result = '勝';
+        target.pnl = ((target.profit - target.entry) / target.entry * 100).toFixed(1);
+      } else if (checkLow && checkLow <= target.loss) {
+        target.result = '負';
+        target.pnl = ((target.loss - target.entry) / target.entry * 100).toFixed(1);
+      } else {
+        target.result = null;
+        target.pnl = null;
+      }
+      updated++;
+    }
+  });
+
+  if (updated > 0) {
+    saveRecords(records);
+    renderResultList();
+    renderList();
+    renderStats();
+    renderOptimizeBanner();
+    document.getElementById('resultPasteInput').value = '';
+    showToast(`✅ ${updated}件の結果を更新しました！`);
+  } else {
+    showToast('❌ 一致する記録が見つかりませんでした');
+  }
+}
+
+// Claude結果読み取りフォーマット出力用（コンソール確認用）
+function formatForResultPaste(code, actualOpen, actualHigh) {
+  return `銘柄コード：${code}\n寄り付き：${actualOpen}\n高値：${actualHigh}`;
+}
+function autoPaste(text) {
+  if (!text || text.length < 5) return;
+  const get = (keys) => {
+    for (const key of keys) {
+      const re = new RegExp(key + '[：:　 ]*([\\d\\.]+)', 'i');
+      const m = text.match(re);
+      if (m) return m[1];
+    }
+    return null;
+  };
+  const setVal = (id, val) => {
+    if (val === null) return;
+    const el = document.getElementById(id);
+    if (el) { el.value = val; }
+  };
+
+  setVal('code',    get(['銘柄コード','コード','code']));
+  setVal('open',    get(['始値','open']));
+  setVal('high',    get(['高値(?!.*夜間)','高値','high']));
+  setVal('low',     get(['安値(?!.*夜間)','安値','low']));
+  setVal('close',   get(['終値(?!.*夜間)','終値','close']));
+  setVal('volume',  get(['売買代金(?!.*夜間)','代金(?!.*夜間)','売買代金','volume']));
+  setVal('volumeRatio', get(['出来高倍率','倍率','前日比']));
+  setVal('nOpen',   get(['夜間始値','夜間.*始値','n始値']));
+  setVal('nHigh',   get(['夜間高値','夜間.*高値','n高値']));
+  setVal('nLow',    get(['夜間安値','夜間.*安値','n安値']));
+  setVal('nClose',  get(['夜間終値','夜間.*終値','n終値']));
+  setVal('nVolume', get(['夜間代金','夜間.*代金','夜間売買代金']));
+
+  // 銘柄名（数字以外のパターン）
+  const nameMatch = text.match(/銘柄名[：: 　]*([^\n\d]+)/);
+  if (nameMatch) document.getElementById('name').value = nameMatch[1].trim();
+
+  // 自動入力後にテキストエリアをクリア
+  document.getElementById('pasteInput').value = '';
+  showToast('✅ 自動入力しました！');
+  calc();
+}
+
+// 計算
+function calc() {
+  const open = parseFloat(document.getElementById('open').value);
+  const low = parseFloat(document.getElementById('low').value);
+  const close = parseFloat(document.getElementById('close').value);
+  const volume = parseFloat(document.getElementById('volume').value);
+  const volumeRatio = parseFloat(document.getElementById('volumeRatio').value);
+  const nOpen = parseFloat(document.getElementById('nOpen').value);
+  const nHigh = parseFloat(document.getElementById('nHigh').value);
+  const nLow = parseFloat(document.getElementById('nLow').value);
+  const nClose = parseFloat(document.getElementById('nClose').value);
+  const nVolume = parseFloat(document.getElementById('nVolume').value);
+
+  if (!close || close <= 0) {
+    document.getElementById('scoreNum').textContent = '—';
+    document.getElementById('scoreVerdict').textContent = '終値を入力してください';
+    document.getElementById('scoreVerdict').style.color = 'var(--muted)';
+    document.getElementById('entryPrice').textContent = '—';
+    document.getElementById('profitPrice').textContent = '—';
+    document.getElementById('lossPrice').textContent = '—';
+    document.getElementById('profitPct').textContent = '';
+    return;
+  }
+
+  const gapUp = low > 0 && ((close - low) / low) > 0.03;
+  const yosen = open > 0 && close > open;
+  const volumeUp = volume > 500000;
+  const volRatioUp = volumeRatio >= 2;
+  const volRatioHigh = volumeRatio >= 5;
+  const nightRise = (nClose > 0 && close > 0) ? (nClose - close) / close : 0;
+  const nightUp = nightRise > 0.01;
+  const nightStrong = (nHigh > 0 && nOpen > 0) ? (nHigh - nOpen) / nOpen > 0.01 : false;
+  // ③ 高値更新チェック（当日高値 > 前日高値）
+  const highUpdate = high > 0 && nHigh > 0 && nHigh > high;
+  
+  // ① 夜間+15%以上は除外
+  const isExcluded = nightRise >= 0.15;
+
+  let score = (gapUp?1:0) + (yosen?1:0) + (volumeUp?1:0) + (volRatioUp?1:0) + (volRatioHigh?1:0) + (nightUp?1:0) + (nightStrong?1:0) + (highUpdate?1:0);
+  score = Math.min(score, 4);
+
+  const flags = document.getElementById('flagsDisplay');
+  const flagData = [
+    { on: gapUp, label: '📈 ギャップアップ' },
+    { on: yosen, label: '🕯 陽線' },
+    { on: volumeUp, label: '💥 出来高急増' },
+    { on: volRatioHigh, label: `🔥 前日比${volumeRatio?volumeRatio.toFixed(1):'?'}倍` },
+    { on: volRatioUp && !volRatioHigh, label: `📊 前日比${volumeRatio?volumeRatio.toFixed(1):'?'}倍` },
+    { on: nightUp, label: `🌙 夜間+${(nightRise*100).toFixed(1)}%` },
+    { on: nightStrong, label: '🚀 夜間強い' },
+    { on: highUpdate, label: '📊 高値更新' },
+    { on: isExcluded, label: '⚠️ 夜間過熱・除外' },
+  ];
+  flags.innerHTML = flagData.map(f =>
+    `<div class="flag ${f.on ? 'on' : 'off'}">${f.label}</div>`
+  ).join('');
+
+  const el = document.getElementById('scoreNum');
+  
+  // 除外銘柄の場合
+  if (isExcluded) {
+    el.textContent = '×';
+    el.className = 'score-number s0';
+    document.getElementById('scoreVerdict').textContent = '⚠️ 夜間+15%超 → エントリー禁止（寄り天リスク）';
+    document.getElementById('scoreVerdict').style.color = 'var(--warn)';
+    document.getElementById('entryPrice').textContent = '除外';
+    document.getElementById('profitPrice').textContent = '—';
+    document.getElementById('lossPrice').textContent = '—';
+    document.querySelector('.price-box.entry .price-box-pct').textContent = '夜間過熱';
+    return;
+  }
+
+  el.textContent = score;
+  el.className = `score-number s${score}`;
+
+  const verdicts = {
+    0: ['見送り推奨', 'var(--muted)'],
+    1: ['シグナル弱い', 'var(--warn)'],
+    2: ['検討レベル', 'var(--score-mid)'],
+    3: ['エントリー有望 ✓', 'var(--accent2)'],
+    4: ['強いシグナル!! ✓✓', 'var(--accent2)'],
+  };
+  const [vtext, vcolor] = verdicts[score];
+  document.getElementById('scoreVerdict').textContent = vtext;
+  document.getElementById('scoreVerdict').style.color = vcolor;
+
+  // ② PTS終値基準のエントリー指値計算
+  const basePrice = nClose > 0 ? nClose : close;
+  let entryMultiplier;
+  if (nightRise < 0.05) entryMultiplier = 0.97;
+  else if (nightRise < 0.10) entryMultiplier = 0.98;
+  else entryMultiplier = 0.99;
+
+  const optimized = isOptimized();
+  const profitRate = getProfitRate(score);
+  
+  const entry = Math.round(basePrice * entryMultiplier);
+  const profit = Math.round(entry * (1 + profitRate));
+  // ④ 損切りを-3.5%に変更
+  const loss = Math.round(entry * 0.965);
+
+  document.getElementById('entryPrice').textContent = `¥${entry}`;
+  document.getElementById('profitPrice').textContent = `¥${profit}`;
+  document.getElementById('lossPrice').textContent = `¥${loss}`;
+  
+  const entryLabel = `PTS×${entryMultiplier}（夜間${(nightRise*100).toFixed(0)}%）`;
+  document.querySelector('.price-box.entry .price-box-pct').textContent = entryLabel;
+  
+  document.getElementById('profitPct').textContent = optimized
+    ? `📊 実績値 +${Math.round(profitRate*100)}%`
+    : `固定 +4%`;
+  document.getElementById('lossPct').textContent = '固定 -3.5%';
+}
+
+// 記録保存
+function saveRecord() {
+  const code = document.getElementById('code').value;
+  const name = document.getElementById('name').value;
+  const date = document.getElementById('tradeDate').value;
+  const open = parseFloat(document.getElementById('open').value);
+  const high = parseFloat(document.getElementById('high').value);
+  const low = parseFloat(document.getElementById('low').value);
+  const close = parseFloat(document.getElementById('close').value);
+  const volume = parseFloat(document.getElementById('volume').value);
+  const volumeRatio = parseFloat(document.getElementById('volumeRatio').value)||null;
+  const nOpen = parseFloat(document.getElementById('nOpen').value)||null;
+  const nHigh = parseFloat(document.getElementById('nHigh').value)||null;
+  const nLow = parseFloat(document.getElementById('nLow').value)||null;
+  const nClose = parseFloat(document.getElementById('nClose').value)||null;
+  const nVolume = parseFloat(document.getElementById('nVolume').value)||null;
+
+  if (!close || !code) { showToast('❌ 銘柄コードと終値は必須です'); return; }
+
+  const gapUp = low > 0 && ((close - low) / low) > 0.03;
+  const yosen = open > 0 && close > open;
+  const volumeUp = volume > 500000;
+  const volRatioUp = volumeRatio >= 2;
+  const volRatioHigh = volumeRatio >= 5;
+  const nightRise = (nClose > 0 && close > 0) ? (nClose - close) / close : 0;
+  const nightUp = nightRise > 0.01;
+  const nightStrong = (nHigh > 0 && nOpen > 0) ? (nHigh - nOpen) / nOpen > 0.01 : false;
+  const highUpdate = high > 0 && nHigh > 0 && nHigh > high;
+  const isExcluded = nightRise >= 0.15;
+  let score = Math.min((gapUp?1:0)+(yosen?1:0)+(volumeUp?1:0)+(volRatioUp?1:0)+(volRatioHigh?1:0)+(nightUp?1:0)+(nightStrong?1:0)+(highUpdate?1:0), 4);
+
+  if (isExcluded) { showToast('⚠️ 夜間+15%超のため除外銘柄です'); return; }
+
+  const basePrice = nClose > 0 ? nClose : close;
+  let entryMultiplier;
+  if (nightRise < 0.05) entryMultiplier = 0.97;
+  else if (nightRise < 0.10) entryMultiplier = 0.98;
+  else entryMultiplier = 0.99;
+
+  const profitRate = getProfitRate(score);
+  const entry = Math.round(basePrice * entryMultiplier);
+  const profit = Math.round(entry * (1 + profitRate));
+  const loss = Math.round(entry * 0.965);
+
+  const record = {
+    id: Date.now(), date, code, name,
+    open, high, low, close, volume, volumeRatio,
+    nOpen, nHigh, nLow, nClose, nVolume,
+    score, entry, profit, loss, entryRate, profitRate,
+    actualOpen: null, actualHigh: null, actualLow: null, result: null, pnl: null
+  };
+
+  const records = getRecords();
+  records.unshift(record);
+  saveRecords(records);
+  showToast('✅ 記録しました！');
+  clearForm();
+  renderList();
+  renderResultList();
+  renderStats();
+}
+
+function clearForm() {
+  ['code','name','open','high','low','close','volume','volumeRatio','nOpen','nHigh','nLow','nClose','nVolume'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('tradeDate').value = today.toISOString().split('T')[0];
+  calc();
+}
+
+// 記録リスト
+function renderList() {
+  const records = getRecords();
+  const el = document.getElementById('recordList');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty-state"><span class="emoji">📭</span>まだ記録がありません<br><small>入力タブから銘柄を記録してください</small></div>`;
+    return;
+  }
+  el.innerHTML = records.map(r => {
+    const resultBadge = r.result === '勝' ? '<span class="result-badge win">🟢 勝</span>'
+      : r.result === '負' ? '<span class="result-badge lose">🔴 負</span>'
+      : '<span class="result-badge pending">⚪ 未</span>';
+    const pctLabel = r.profitRate ? `+${Math.round(r.profitRate*100)}%` : '+4%';
+    return `<div class="record-item">
+      <div class="record-header">
+        <div>
+          <div class="record-code">${r.code} <span style="font-size:14px;color:var(--muted);font-family:'Noto Sans JP'">${r.name||''}</span></div>
+          <div style="margin-top:4px;">${resultBadge}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="record-score-badge s${r.score}">${r.score}</div>
+          <button class="btn-danger" onclick="deleteRecord(${r.id})">削除</button>
+        </div>
+      </div>
+      <div class="record-prices">
+        <div class="record-price-item">
+          <div class="record-price-lbl">エントリー</div>
+          <div class="record-price-val" style="color:var(--accent)">¥${r.entry}</div>
+        </div>
+        <div class="record-price-item">
+          <div class="record-price-lbl">利確 ${pctLabel}</div>
+          <div class="record-price-val" style="color:var(--accent2)">¥${r.profit}</div>
+        </div>
+        <div class="record-price-item">
+          <div class="record-price-lbl">損切 -5%</div>
+          <div class="record-price-val" style="color:var(--warn)">¥${r.loss}</div>
+        </div>
+      </div>
+      <div class="record-date">${r.date} ／ 前日終値 ¥${r.close} ／ 売買代金 ${r.volume||'—'}百万円</div>
+    </div>`;
+  }).join('');
+}
+
+// 結果入力リスト
+function renderResultList() {
+  const records = getRecords();
+  const el = document.getElementById('resultList');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty-state"><span class="emoji">🎯</span>記録がありません</div>`;
+    return;
+  }
+  el.innerHTML = records.map(r => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-size:18px;font-weight:900;font-family:'JetBrains Mono'">${r.code}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.name||''} / ${r.date}</div>
+        </div>
+        <div class="record-score-badge s${r.score}">${r.score}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;text-align:center;margin-bottom:10px;">
+        <div><div style="color:var(--muted);margin-bottom:2px;">エントリー</div><div style="font-weight:700;color:var(--accent)">¥${r.entry}</div></div>
+        <div><div style="color:var(--muted);margin-bottom:2px;">利確</div><div style="font-weight:700;color:var(--accent2)">¥${r.profit}</div></div>
+        <div><div style="color:var(--muted);margin-bottom:2px;">損切</div><div style="font-weight:700;color:var(--warn)">¥${r.loss}</div></div>
+      </div>
+      <div class="form-row" style="margin-bottom:8px;">
+        <div>
+          <label>実際の寄り付き (円)</label>
+          <input type="number" inputmode="decimal" placeholder="¥190" value="${r.actualOpen||''}"
+            onchange="updateResult(${r.id},'actualOpen',this.value)">
+        </div>
+        <div>
+          <label>当日高値 10時</label>
+          <input type="number" inputmode="decimal" placeholder="¥200" value="${r.actualHigh||''}"
+            onchange="updateResult(${r.id},'actualHigh',this.value)">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label>当日安値 10時（損切り判定用）</label>
+        <input type="number" inputmode="decimal" placeholder="¥185" value="${r.actualLow||''}"
+          onchange="updateResult(${r.id},'actualLow',this.value)">
+      </div>
+      <div style="text-align:center;font-size:13px;font-weight:700;" id="result-${r.id}">
+        ${getResultDisplay(r)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function getResultDisplay(r) {
+  if (!r.actualHigh && !r.actualLow && !r.actualOpen) return '<span style="color:var(--muted)">⚪ データ未入力</span>';
+  const pct = r.profitRate ? Math.round(r.profitRate*100) : 4;
+  // 高値が利確に届いた → 勝ち
+  if (r.actualHigh && r.actualHigh >= r.profit) return `<span style="color:var(--accent2)">🟢 勝 ／ 損益率 +${pct}.0%</span>`;
+  // 安値が損切りを下回った → 負け（安値優先、なければ寄り付きで判定）
+  const checkLow = r.actualLow || r.actualOpen;
+  if (checkLow && checkLow <= r.loss) return `<span style="color:var(--warn)">🔴 負 ／ 損益率 -5.0%</span>`;
+  return `<span style="color:var(--muted)">⚪ 利確・損切未達</span>`;
+}
+
+function updateResult(id, field, value) {
+  const records = getRecords();
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  r[field] = parseFloat(value) || null;
+  // 結果自動判定（高値・安値・寄り付きのいずれかがあれば判定）
+  const checkLow = r.actualLow || r.actualOpen;
+  if (r.actualHigh >= r.profit) {
+    r.result = '勝';
+    r.pnl = ((r.profit - r.entry) / r.entry * 100).toFixed(1);
+  } else if (checkLow && checkLow <= r.loss) {
+    r.result = '負';
+    r.pnl = ((r.loss - r.entry) / r.entry * 100).toFixed(1);
+  } else {
+    r.result = null;
+    r.pnl = null;
+  }
+  saveRecords(records);
+  renderList();
+  renderStats();
+  renderOptimizeBanner();
+  const el = document.getElementById(`result-${id}`);
+  if (el) el.innerHTML = getResultDisplay(r);
+  showToast('✅ 結果を更新しました');
+
+  const done = records.filter(x => x.result === '勝' || x.result === '負');
+  if (done.length === MIN_DATA) {
+    setTimeout(() => showToast('🎉 30件達成！自動最適化が解放されました！'), 500);
+  }
+}
+
+function deleteRecord(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  const records = getRecords().filter(r => r.id !== id);
+  saveRecords(records);
+  renderList(); renderResultList(); renderStats(); renderOptimizeBanner();
+  showToast('🗑 削除しました');
+}
+
+// 分析
+function renderStats() {
+  const records = getRecords();
+  const done = records.filter(r => r.result === '勝' || r.result === '負');
+  const wins = done.filter(r => r.result === '勝');
+  const winRate = done.length ? (wins.length / done.length * 100).toFixed(0) : '—';
+  const optimized = isOptimized();
+  const profitRates = optimized ? calcOptimalProfitRates() : {};
+  const entryRates = optimized ? calcOptimalEntryRates() : {};
+
+  document.getElementById('overallStats').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-box-label">総記録数</div>
+      <div class="stat-box-value">${records.length}</div>
+      <div class="stat-box-sub">件</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-label">全体勝率</div>
+      <div class="stat-box-value" style="color:${winRate>60?'var(--accent2)':winRate<40?'var(--warn)':'var(--gold)'}">${winRate}${winRate!='—'?'%':''}</div>
+      <div class="stat-box-sub">${wins.length}勝 ${done.length-wins.length}負</div>
+    </div>
+  `;
+
+  const el = document.getElementById('scoreAnalysis');
+  let html = '';
+  for (let s = 4; s >= 0; s--) {
+    const group = done.filter(r => r.score === s);
+    const gWins = group.filter(r => r.result === '勝');
+    const rate = group.length ? gWins.length / group.length : 0;
+    const pct = group.length ? Math.round(rate * 100) : 0;
+    const barClass = s >= 3 ? 'high' : s === 2 ? 'mid' : 'low';
+    const optInfo = optimized
+      ? `<span style="color:var(--accent);font-size:10px;margin-left:4px;">入${entryRates[s]?'+'+Math.round(entryRates[s]*1000)/10+'%':'標準'} / 利${profitRates[s]?'+'+Math.round(profitRates[s]*100)+'%':'標準'}</span>`
+      : '';
+
+    html += `<div class="score-analysis-row">
+      <div class="score-pill s${s}">${s}</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-label">
+          <span style="font-weight:700">${pct}%</span>
+          <span style="color:var(--muted)">勝率${optInfo}</span>
+        </div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill ${barClass}" style="width:${pct}%"></div>
+        </div>
+      </div>
+      <div class="score-count">${group.length}件</div>
+    </div>`;
+  }
+  el.innerHTML = html || '<div style="color:var(--muted);font-size:12px;padding:12px 0">結果データがまだありません</div>';
+}
+
+// バックアップ・復元
+function backupData() {
+  const records = getRecords();
+  if (!records.length) { showToast('❌ データがありません'); return; }
+  const backup = 'TGKBACKUP:' + JSON.stringify(records);
+  navigator.clipboard.writeText(backup).then(() => {
+    showToast(`✅ ${records.length}件をコピーしました！メモ帳に貼り付けて保存してください`);
+  }).catch(() => {
+    // クリップボードが使えない場合はtextareaに表示
+    document.getElementById('restoreInput').value = backup;
+    showToast('✅ 下のテキストをコピーして保存してください');
+  });
+}
+
+function restoreData() {
+  const text = document.getElementById('restoreInput').value.trim();
+  if (!text) { showToast('❌ バックアップテキストを貼り付けてください'); return; }
+  
+  let json = text;
+  if (text.startsWith('TGKBACKUP:')) {
+    json = text.replace('TGKBACKUP:', '');
+  }
+  
+  try {
+    const records = JSON.parse(json);
+    if (!Array.isArray(records)) throw new Error('Invalid');
+    saveRecords(records);
+    document.getElementById('restoreInput').value = '';
+    renderList();
+    renderResultList();
+    renderStats();
+    renderOptimizeBanner();
+    showToast(`✅ ${records.length}件のデータを復元しました！`);
+  } catch(e) {
+    showToast('❌ 復元失敗。正しいバックアップテキストか確認してください');
+  }
+}
+
+// CSV出力
+function exportCSV() {
+  const records = getRecords();
+  if (!records.length) { showToast('❌ データがありません'); return; }
+  const headers = ['日付','銘柄コード','銘柄名','始値','高値','安値','終値','売買代金(百万)','夜間先物','スコア','エントリー','利確','損切','利確率%','実際の寄り付き','当日高値','結果','損益率%'];
+  const rows = records.map(r => [
+    r.date, r.code, r.name||'', r.open||'', r.high||'', r.low||'', r.close||'',
+    r.volume||'', r.futures||'', r.score, r.entry, r.profit, r.loss,
+    r.profitRate ? Math.round(r.profitRate*100) : 4,
+    r.actualOpen||'', r.actualHigh||'', r.result||'', r.pnl||''
+  ]);
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `低位株記録_${today.toISOString().split('T')[0]}.csv`;
+  a.click();
+  showToast('📥 CSVをダウンロード中...');
+}
+
+// ページ切り替え
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'list') renderList();
+  if (name === 'result') renderResultList();
+  if (name === 'stats') renderStats();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// 初期化
+init();
+</script>
+
+</body>
+</html>
