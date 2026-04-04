@@ -1084,7 +1084,9 @@ function saveRecord() {
   const isExcluded = nightRise >= 0.15;
   let score = Math.min((gapUp?1:0)+(yosen?1:0)+(volumeUp?1:0)+(volRatioUp?1:0)+(volRatioHigh?1:0)+(nightUp?1:0)+(nightStrong?1:0)+(highUpdate?1:0), 4);
 
-  if (isExcluded) { showToast('⚠️ 夜間+15%超のため除外銘柄です'); return; }
+  if (isExcluded) { 
+    showToast('⚠️ 夜間+15%超の除外銘柄として記録します');
+  }
 
   const basePrice = nClose > 0 ? nClose : close;
   let entryMultiplier;
@@ -1101,7 +1103,7 @@ function saveRecord() {
     id: Date.now(), date, code, name,
     open, high, low, close, volume, volumeRatio,
     nOpen, nHigh, nLow, nClose, nVolume,
-    score, entry, profit, loss, entryRate, profitRate,
+    score, entry, profit, loss, profitRate, entryMultiplier, isExcluded: isExcluded || false,
     actualOpen: null, actualHigh: null, actualLow: null, result: null, pnl: null
   };
 
@@ -1132,7 +1134,8 @@ function renderList() {
     return;
   }
   el.innerHTML = records.map(r => {
-    const resultBadge = r.result === '勝' ? '<span class="result-badge win">🟢 勝</span>'
+    const resultBadge = r.isExcluded ? '<span class="result-badge" style="background:rgba(255,107,107,0.15);color:var(--warn);border:1px solid rgba(255,107,107,0.3);">⚠️ 除外</span>'
+      : r.result === '勝' ? '<span class="result-badge win">🟢 勝</span>'
       : r.result === '負' ? '<span class="result-badge lose">🔴 負</span>'
       : '<span class="result-badge pending">⚪ 未</span>';
     const pctLabel = r.profitRate ? `+${Math.round(r.profitRate*100)}%` : '+4%';
